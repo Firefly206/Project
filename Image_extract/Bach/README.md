@@ -9,9 +9,7 @@ This project provides a RESTful API for comparing faces, extracting information 
 - [Setup](#setup)
 - [Usage](#usage)
 - [Endpoints](#endpoints)
-- [Testing](#testing)
-- [Dependencies](#dependencies)
-- [License](#license)
+
 
 ## Overview
 
@@ -22,8 +20,6 @@ This project offers an API to compare faces from two images, extract information
 - Compare two faces to determine if they are the same person.
 - Extract information from an image.
 - Detect and crop the largest face in an image.
-
-## Setup
 
 ### Prerequisites
 
