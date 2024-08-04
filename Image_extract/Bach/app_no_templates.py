@@ -1,16 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import os
+import time
 import requests
-import deepface
 from io import BytesIO
 from PIL import Image
 from dotenv import load_dotenv
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
-import time
 
-# Import functions from your provided scripts
+# Import functions 
 from compare_face import compare_faces_deepface
 from compareFace_Gemini import compare_faces_gemini
 from crop_image import detect_and_crop_largest_face
@@ -95,69 +94,47 @@ def crop_image():
     detect_and_crop_largest_face(image_path, output_path)
     return jsonify({"message": f"Cropped image saved to {output_path}"})
 
-# @app.route('/compare_faces', methods=['POST'])
-# @cross_origin()
-# def compare_faces():
-#     if 'image1' not in request.files or 'image2' not in request.files:
-#         return jsonify({"error": "Missing one or both image parts in the request"}), 400
-#     file1 = request.files['image1']
-#     file2 = request.files['image2']
-    
-#     print("Files received:", file1, file2)
-
-#     if file1.filename == '' or file2.filename == '':
-#         return jsonify({"error": "No selected file(s)"}), 400
-
-#     # Generate unique filenames with timestamp
-#     timestamp = int(time.time())
-#     image_path1 = f'./media/{timestamp}_{file1.filename}'
-#     image_path2 = f'./media/{timestamp}_{file2.filename}'
-
-#     file1.save(image_path1)
-#     file2.save(image_path2)
-
-#     compare_faces_deepface_result = compare_faces_deepface(img1passport_image_path_path=image_path1, person_image_path=image_path2)
-#     compare_faces_gemini_result = compare_faces_gemini(image_path1, image_path2) 
-
-#     return jsonify({
-#         "compare_faces_deepface_result": compare_faces_deepface_result,
-#         "compare_faces_gemini_result": compare_faces_gemini_result
-#     })
-
 @app.route('/compare_faces', methods=['POST'])
 @cross_origin()
 def compare_faces():
-    if 'image1' not in request.files or 'image2' not in request.files:
-        print("Files not in request")
-        return jsonify({"error": "Missing one or both image parts in the request"}), 400
+    try:
+        if 'image1' not in request.files or 'image2' not in request.files:
+            print("Files not in request")
+            return jsonify({"error": "Missing one or both image parts in the request"}), 400
 
-    file1 = request.files['image1']
-    file2 = request.files['image2']
-    
-    print("Files received:", file1, file2)
-    print("Filenames received:", file1.filename, file2.filename)
-    
-    if file1.filename == '' or file2.filename == '':
-        print("No selected file(s)")
-        return jsonify({"error": "No selected file(s)"}), 400
+        file1 = request.files['image1']
+        file2 = request.files['image2']
 
-    # Generate unique filenames with timestamp
-    timestamp = int(time.time())
-    image_path1 = f'./media/{timestamp}_{file1.filename}'
-    image_path2 = f'./media/{timestamp}_{file2.filename}'
+        print("Files received:", file1.filename, file2.filename)
 
-    file1.save(image_path1)
-    file2.save(image_path2)
-    
-    print("Files saved:", image_path1, image_path2)
+        if file1.filename == '' or file2.filename == '':
+            print("No selected file(s)")
+            return jsonify({"error": "No selected file(s)"}), 400
 
-    compare_faces_deepface_result = compare_faces_deepface(img1_path=image_path1, img2_path=image_path2)
-    compare_faces_gemini_result = compare_faces_gemini(image_path1, image_path2)  # Assuming this is another function you've defined
+        # Generate unique filenames with timestamp
+        timestamp = int(time.time())
+        image_path1 = os.path.join('.\media', f'{timestamp}_{file1.filename}')
+        image_path2 = os.path.join('.\media', f'{timestamp}_{file2.filename}')
 
-    return jsonify({
-        "compare_faces_deepface_result": compare_faces_deepface_result,
-        "compare_faces_gemini_result": compare_faces_gemini_result
-    })
+        # Save the uploaded files
+        file1.save(image_path1)
+        file2.save(image_path2)
+
+        print("Files saved:", image_path1, image_path2)
+
+        # Call the compare_faces_deepface function with the saved image paths
+        compare_faces_deepface_result = compare_faces_deepface(image_path1, image_path2)
+        compare_faces_gemini_result = compare_faces_gemini(image_path1, image_path2)
+
+        return jsonify({
+            "compare_faces_deepface_result": compare_faces_deepface_result,
+            "compare_faces_gemini_result": compare_faces_gemini_result
+        })
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 
 if __name__ == '__main__':
     os.makedirs('./media', exist_ok=True)  # Create media directory if it doesn't exist
