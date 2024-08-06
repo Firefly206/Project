@@ -34,13 +34,17 @@ def compare_faces_gemini(image_path1, image_path2):
 
     # Generate response from the model
     response = model.generate_content(
-        ['Compare two faces and tell me if they are the same person', img_passport, img_face],
+        ['Compare two faces and tell me if they are the same person.', img_passport, img_face],
         safety_settings=safety_settings
     )
 
+    result_text = response.text.strip().lower()
+    verified = "same person" in result_text
+
     # Print the response text
-    print(response.text)
-    return response.text
+    #print(response.text)
+    print(verified)
+    return verified
 
 if __name__ == "__main__":
     image_passport = './media/passport-card-sample.jpg'
