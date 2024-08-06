@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import os
 import time
+import uuid
 import requests
 from io import BytesIO
 from PIL import Image
@@ -65,19 +66,49 @@ def upload_image_url():
 
     return jsonify({"message": f"Image saved to {image_path}", "image_path": image_path})
 
+# @app.route('/extract_information', methods=['POST'])
+# @cross_origin()
+# def extract_information():
+#     if 'image' not in request.files:
+#         return jsonify({"error": "No image part in the request"}), 400
+#     file = request.files['image']
+#     if file.filename == '':
+#         return jsonify({"error": "No selected file"}), 400
+#     image_path = './media/' + file.filename
+#     file.save(image_path)
+    
+#     response_text = extract_information_from_image(image_path)
+#     return jsonify({"text": response_text})
+
+
 @app.route('/extract_information', methods=['POST'])
 @cross_origin()
 def extract_information():
-    if 'image' not in request.files:
-        return jsonify({"error": "No image part in the request"}), 400
-    file = request.files['image']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    image_path = './media/' + file.filename
-    file.save(image_path)
-    
-    response_text = extract_information_from_image(image_path)
-    return jsonify({"text": response_text})
+    try:
+        if 'image' not in request.files:
+            return jsonify({"error": "Missing image part in the request"}), 400
+
+        file = request.files['image']
+
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+
+        image_path = os.path.join('./media', file.filename)
+        file.save(image_path)
+
+        extracted_information = extract_information_from_image(image_path)
+
+        # Save the extracted information to a unique text file
+        info_folder = './Information'
+        os.makedirs(info_folder, exist_ok=True)
+        unique_filename = f'passport_{uuid.uuid4()}.txt'
+        info_path = os.path.join(info_folder, unique_filename)
+        with open(info_path, 'w') as info_file:
+            info_file.write(extracted_information)
+
+        return jsonify({"extracted_information": extracted_information, "saved_to": info_path})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/crop_image', methods=['POST'])
 @cross_origin()
