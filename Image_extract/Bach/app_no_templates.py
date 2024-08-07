@@ -9,6 +9,7 @@ from PIL import Image
 from dotenv import load_dotenv
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
+import json 
 
 # Import functions 
 from compare_face import compare_faces_deepface
@@ -81,49 +82,126 @@ def upload_image_url():
 #     return jsonify({"text": response_text})
 
 
+# @app.route('/extract_information', methods=['POST'])
+# @cross_origin()
+# def extract_information():
+#     try:
+#         if 'image' not in request.files:
+#             return jsonify({"error": "Missing image part in the request"}), 400
+
+#         file = request.files['image']
+
+#         if file.filename == '':
+#             return jsonify({"error": "No selected file"}), 400
+
+#         image_path = os.path.join('./media', file.filename)
+#         file.save(image_path)
+
+#         extracted_information = extract_information_from_image(image_path)
+
+#         # Save the extracted information to a unique text file
+#         info_folder = './Information'
+#         os.makedirs(info_folder, exist_ok=True)
+#         unique_filename = f'passport_{uuid.uuid4()}.txt'
+#         info_path = os.path.join(info_folder, unique_filename)
+#         with open(info_path, 'w', encoding='utf-8') as info_file:
+#             info_file.write(extracted_information)
+
+#         return jsonify({"extracted_information": extracted_information, "saved_to": info_path})
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+
 @app.route('/extract_information', methods=['POST'])
 @cross_origin()
 def extract_information():
     try:
         if 'image' not in request.files:
+            print("File not in request")
             return jsonify({"error": "Missing image part in the request"}), 400
 
         file = request.files['image']
 
+        print("File received:", file.filename)
+
         if file.filename == '':
+            print("No selected file")
             return jsonify({"error": "No selected file"}), 400
 
+        # Save the uploaded file
         image_path = os.path.join('./media', file.filename)
         file.save(image_path)
 
-        extracted_information = extract_information_from_image(image_path)
+        print("File saved:", image_path)
+
+        # Extract information from the image
+        extracted_info = extract_information_from_image(image_path)
 
         # Save the extracted information to a unique text file
         info_folder = './Information'
         os.makedirs(info_folder, exist_ok=True)
-        unique_filename = f'passport_{uuid.uuid4()}.txt'
+        unique_filename = f'passport_{uuid.uuid4()}.json'
         info_path = os.path.join(info_folder, unique_filename)
-        with open(info_path, 'w') as info_file:
-            info_file.write(extracted_information)
+        with open(info_path, 'w', encoding='utf-8') as info_file:
+            json.dump(extracted_info, info_file, ensure_ascii=False, indent=4)
 
-        return jsonify({"extracted_information": extracted_information, "saved_to": info_path})
+        return jsonify({"extracted_information": extracted_info, "saved_to": info_path})
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+
+# @app.route('/crop_image', methods=['POST'])
+# @cross_origin()
+# def crop_image():
+#     if 'image' not in request.files:
+#         return jsonify({"error": "No image part in the request"}), 400
+#     file = request.files['image']
+#     if file.filename == '':
+#         return jsonify({"error": "No selected file"}), 400
+#     image_path = './media/' + file.filename
+#     output_path = './media/cropped_' + file.filename
+#     file.save(image_path)
+    
+#     detect_and_crop_largest_face(image_path, output_path)
+#     return jsonify({"message": f"Cropped image saved to {output_path}"})
+
 
 @app.route('/crop_image', methods=['POST'])
 @cross_origin()
 def crop_image():
-    if 'image' not in request.files:
-        return jsonify({"error": "No image part in the request"}), 400
-    file = request.files['image']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    image_path = './media/' + file.filename
-    output_path = './media/cropped_' + file.filename
-    file.save(image_path)
-    
-    detect_and_crop_largest_face(image_path, output_path)
-    return jsonify({"message": f"Cropped image saved to {output_path}"})
+    try:
+        if 'image' not in request.files:
+            print("File not in request")
+            return jsonify({"error": "Missing image part in the request"}), 400
+
+        file = request.files['image']
+
+        print("File received:", file.filename)
+
+        if file.filename == '':
+            print("No selected file")
+            return jsonify({"error": "No selected file"}), 400
+
+        # Save the uploaded file
+        image_path = os.path.join('./media', file.filename)
+        file.save(image_path)
+
+        print("File saved:", image_path)
+
+        # Detect and crop the largest face
+        cropped_image_path = detect_and_crop_largest_face(image_path)
+
+        if cropped_image_path:
+            return jsonify({"cropped_image_path": cropped_image_path})
+        else:
+            return jsonify({"error": "No face detected"}), 400
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/compare_faces', methods=['POST'])
 @cross_origin()
