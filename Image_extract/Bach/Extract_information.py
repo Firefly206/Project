@@ -1,3 +1,5 @@
+import pathlib
+import textwrap
 import os
 from dotenv import load_dotenv
 import PIL.Image
@@ -37,10 +39,20 @@ def extract_information_from_image(image_path):
     img = PIL.Image.open(image_path)
 
     # Generate response from the model
-    response = model.generate_content(
-        ['Extract the following information from this passport image: Passport Number, Nationality, Surname, Given Names, Gender, Date of Birth, Place of Birth, Issued On, Expires On.', img],
-        safety_settings=safety_settings
-    )
+    prompt = """
+    Extract the following information from this passport image:
+    - Passport Number: 
+    - Nationality: 
+    - Surname: 
+    - Given Names: 
+    - Gender: 
+    - Date of Birth: 
+    - Place of Birth: (or Place of Origin)
+    - Issued On: 
+    - Expires On: 
+    If the information is labeled differently in the passport, standardize it to the above fields.
+    """
+    response = model.generate_content([prompt, img], safety_settings=safety_settings)
 
     # Extract and format the text information
     extracted_text = response.text.strip()
@@ -72,7 +84,7 @@ def format_passport_information(extracted_text):
         "Given Names": r"Given Names: (.+)",
         "Gender": r"Gender: (.+)",
         "Date of Birth": r"Date of Birth: (.+)",
-        "Place of Birth": r"Place of Birth: (.+)",
+        "Place of Birth": r"Place of Birth: (.+)|Place of Origin: (.+)",
         "Issued On": r"Issued On: (.+)",
         "Expires On": r"Expires On: (.+)"
     }
@@ -81,7 +93,8 @@ def format_passport_information(extracted_text):
     for key, pattern in fields.items():
         match = re.search(pattern, extracted_text)
         if match:
-            formatted_info[key] = match.group(1).strip()
+            # Handle multiple groups in regex (e.g., Place of Birth / Place of Origin)
+            formatted_info[key] = match.group(1).strip() if match.group(1) else match.group(2).strip()
 
     return formatted_info
 
@@ -98,6 +111,6 @@ def save_to_json(data, file_path):
         json.dump(data, json_file, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
-    image_path = './media/CCCD.jpg'
+    image_path = './media/page_1.jpg'
     extracted_info = extract_information_from_image(image_path)
     print(json.dumps(extracted_info, indent=4))
