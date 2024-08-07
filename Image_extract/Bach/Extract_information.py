@@ -63,7 +63,7 @@ def extract_information_from_image(image_path):
     filename = f'passport_{special_id}.json'
 
     # Save the formatted information to a JSON file
-    save_to_json(formatted_info, f'./Information/{filename}')
+    # save_to_json(formatted_info, f'./Information/{filename}')
 
     return formatted_info
 
@@ -98,17 +98,17 @@ def format_passport_information(extracted_text):
 
     return formatted_info
 
-def save_to_json(data, file_path):
-    """
-    Saves the given data to a JSON file.
+# def save_to_json(data, file_path):
+#     """
+#     Saves the given data to a JSON file.
 
-    Parameters:
-    - data (dict): The data to save.
-    - file_path (str): The path to the JSON file.
-    """
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, 'w', encoding='utf-8') as json_file:
-        json.dump(data, json_file, ensure_ascii=False, indent=4)
+#     Parameters:
+#     - data (dict): The data to save.
+#     - file_path (str): The path to the JSON file.
+#     """
+#     os.makedirs(os.path.dirname(file_path), exist_ok=True)
+#     with open(file_path, 'w', encoding='utf-8') as json_file:
+#         json.dump(data, json_file, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     image_path = './media/page_1.jpg'
